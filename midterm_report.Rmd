@@ -1,0 +1,22 @@
+---
+title: "Bucks Shots Report"
+author: "Luke DuPont"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+## Main Findings
+Below are the Milwaukee Bucks’ shot charts from 2010 to 2019, showing shot locations and outcomes (red = missed, green = made).
+
+![Faceted Shot Charts](shot_chart_several.png)
+
+- **Increase in Three-Point Attempts**: The Bucks significantly increased their three-point shots over the decade, especially in later years.
+- **Decrease in Mid-Range Shots**: Mid-range attempts declined noticeably as the years progressed.
+- **Higher Concentration Near the Hoop**: Shots in the lane and near the basket became more frequent over time and resulted in more makes.
+
+## Detailed Explanation
+- **Increase in Three-Point Attempts**: This trend aligns with the NBA’s shift toward a three-point-heavy game. Post-2015, the Bucks adopted this strategy, likely influenced by coaching changes and shooters like Khris Middleton. The focus on long-range shots reflects a modern offensive approach to maximize scoring potential.
+- **Decrease in Mid-Range Shots**: The drop in mid-range attempts mirrors league-wide analytics favoring higher-value shots (threes or layups). This shift is clear as mid-range and long two-point clusters thin out in later years, optimizing the Bucks’ shot selection for efficiency.
+- **Higher Concentration Near the Hoop**: The increased density of shots in the lane and near the basket, especially after 2016, correlates with Giannis Antetokounmpo’s rise. His dominance in the paint drove a focus on high-percentage close-range shots. His emergence drove a change for the team as a whole as shot selection inside the 3-point arc became more concentrated within the paint which also led to greater efficiency and more made baskets.

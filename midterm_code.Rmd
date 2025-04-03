@@ -1,0 +1,141 @@
+---
+title: "Milwaukee Bucks Shot Charts (2010-2019)"
+author: "Luke DuPont"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(devtools)
+devtools::install_github("abresler/nbastatR")
+```
+
+```{r}
+# ChatGPT and Grok assisted in creating this code
+library(nbastatR)    # For fetching NBA shot data
+library(ggplot2)     # For creating visualizations
+library(dplyr)       # For data manipulation
+library(cowplot)     # For enhanced plot aesthetics
+
+#  Extract the Milwaukee Bucks' unique team ID from the NBA teams dataset
+bucks_id <- nba_teams() %>%
+  filter(nameTeam == "Milwaukee Bucks") %>%
+  pull(idTeam)
+
+# Function to retrieve Bucks shot data for specified years
+get_bucks_shots <- function(years) {
+  # Input: Vector of season start years
+  # Output: Combined data frame of shot data with season column
+  shots_list <- lapply(years, function(year) {
+    shots <- teams_shots(seasons = year, team_ids = bucks_id)
+    if (nrow(shots) == 0) {
+      message(paste("No data returned for year", year))
+      return(NULL) # Skip years with no data
+    }
+    shots$season <- year  # Add year for faceting
+    return(shots)
+  })
+  shots_combined <- bind_rows(shots_list[!sapply(shots_list, is.null)])
+  if (nrow(shots_combined) == 0) {
+    stop("No data retrieved for any year in the range.")
+  }
+  return(shots_combined)
+}
+
+# Fetch shot data for Bucks from 2010-11 to 2019-20 seasons
+bucks_shots_2010_2019 <- get_bucks_shots(2010:2019)
+
+#  Function to draw a half-court with three-point line
+draw_court <- function() {
+  court <- data.frame(
+    x = c(-250, 250, 250, -250, -250),
+    y = c(-47.5, -47.5, 422.5, 422.5, -47.5)
+  )
+  
+  theta <- seq(0, pi, length.out = 100) 
+  three_point_radius <- 237.5
+  three_point_center_x <- 0
+  three_point_center_y <- 0
+  
+  three_point_arc <- data.frame(
+    x = three_point_center_x + three_point_radius * cos(theta),
+    y = three_point_center_y + three_point_radius * sin(theta)
+  )
+  
+  three_point_left <- data.frame(
+    x = c(-220, -220),
+    y = c(-47.5, 95)
+  )
+
+  three_point_right <- data.frame(
+    x = c(220, 220),
+    y = c(-47.5, 95)
+  )
+  
+  # Return list of ggplot2 geoms
+  list(
+    geom_polygon(data = court, aes(x, y), fill = NA, color = "black"),
+    geom_path(data = three_point_arc, aes(x, y), color = "black"),
+    geom_path(data = three_point_left, aes(x, y), color = "black"),
+    geom_path(data = three_point_right, aes(x, y), color = "black")
+  )
+}
+
+# Create single chart for shots from 2010
+shot_chart_2010 <- ggplot(filter(bucks_shots_2010_2019, season == 2010), aes(x = locationX, y = locationY, color = isShotMade)) +
+  geom_point(alpha = 0.7, size = 0.3) +
+  scale_color_manual(values = c("red", "green"), labels = c("Missed", "Made")) +
+  draw_court() +
+  coord_fixed() +
+  theme_minimal() +
+  labs(title = "Milwaukee Bucks Shot Chart (2010)", color = "Shot Result", x = "Baseline (feet)", y = "Sideline (feet)")
+
+# Create faceted shot charts for 2010-2019
+shot_chart_several <- ggplot(bucks_shots_2010_2019, aes(x = locationX, y = locationY, color = isShotMade)) +
+  geom_point(alpha = 0.7, size = 0.1) +
+  scale_color_manual(values = c("red", "green"), labels = c("Missed", "Made")) +
+  draw_court() +
+  coord_fixed() + # Preserve court aspect ratio
+  theme_minimal() +
+  labs(title = "Milwaukee Bucks Shot Charts (2010-2019)",
+       color = "Shot Result",
+       x = "Baseline (feet)",
+       y = "Sideline (feet)") +
+  facet_wrap(~ season, ncol = 5)
+
+# Display the plots
+shot_chart_2010
+shot_chart_several
+
+# Save faceted plot for report
+ggsave("shot_chart_several.png", shot_chart_several, width = 10, height = 6, dpi = 300)
+```
+
+
+Four Point Arc Proposal
+```{r}
+# Calculate distance from basket (0,0) and success rate
+bucks_shots_2010_2019_2 <- bucks_shots_2010_2019 %>%
+  mutate(distance = sqrt(locationX^2 + locationY^2) / 10)  # Convert to feet
+
+# Bin distances and compute success rate
+distance_summary <- bucks_shots_2010_2019_2 %>%
+  mutate(distance_bin = floor(distance / 2) * 2) %>%  # 2-ft bins
+  group_by(distance_bin) %>%
+  summarise(shots = n(), made = sum(isShotMade), .groups = "drop") %>%
+  mutate(fg_pct = made / shots)
+
+# Expected value for 3-point vs. hypothetical 4-point
+distance_summary <- distance_summary %>%
+  mutate(ev_3pt = fg_pct * 3, ev_4pt = fg_pct * 4)
+
+# Decision: Propose 4-point arc at 28 ft
+# Reasoning: There is about a 3.5% drop off in shooting percentage from 26 to 28 feet as well as a considerable drop off in the number of shots taken between these ranges. A 4-point arc at this spot will increase the risk/reward effect on the game, and it will also increase in fan excitement for watching deeper shots.
+#Consequence: This deeper 4-point arc will result in a greater number of shots being taken from this distance from the basket, especially teams in desperate need of points. Due to the increased difficulty of shots taken at this range, players who previously shot many 3-pointers will begin shooting from the 4-point arc more and will likely suffer decreases to their overall shooting percentages.
+```
